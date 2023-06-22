@@ -32,218 +32,215 @@ SOFTWARE.
 
 public class PlayFabPrefs
 {
-    public class PlayerPrefs
+    private static Dictionary<string, string> saveData = new Dictionary<string, string>();
+
+    public static bool CheckOverlap(string key, string value)
     {
-        private static Dictionary<string, string> saveData = new Dictionary<string, string>();
+        if (saveData.ContainsKey(key))
+            return saveData[key] == value;
+        else
+            return false;
+    }
 
-        public static bool CheckOverlap(string key, string value)
+    public static void Get()
+    {
+        Debug.Log("Getting saved data");
+
+        PlayFabClientAPI.GetUserData(new GetUserDataRequest()
         {
-            if (saveData.ContainsKey(key))
-                return saveData[key] == value;
-            else
-                return false;
+            Keys = null,
+            PlayFabId = Photon.Pun.PhotonNetwork.LocalPlayer.UserId
+        }, msg =>
+        {
+            foreach (KeyValuePair<string, UserDataRecord> kv in msg.Data)
+            {
+                string str = kv.Value.Value;
+
+                Debug.Log($"{kv.Key} : {str}");
+
+                saveData[kv.Key] = str;
+            }
+        }, error =>
+        {
+            Debug.LogError("Failed to get user data");
+        });
+    }
+
+    public static void DeleteAll()
+    {
+        Debug.LogError("You can't delete all user data for obvious reasons");
+    }
+
+    public static void DeleteKey(string key)
+    {
+        Debug.Log("Deleting key");
+
+        PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
+        {
+            KeysToRemove = new List<string>() { key },
+            Permission = UserDataPermission.Public
+        }, msg => { Debug.Log("Deleted key"); }, error => { Debug.LogError("Failed to upload pdata"); });
+    }
+
+    public static float GetFloat(string key, float defaultValue)
+    {
+        if (saveData.ContainsKey(key))
+        {
+            if (float.TryParse(saveData[key], out float result))
+                return result;
         }
 
-        public static void Get()
+        return defaultValue;
+    }
+
+    public static float GetFloat(string key)
+    {
+        if (saveData.ContainsKey(key))
         {
-            Debug.Log("Getting saved data");
-
-            PlayFabClientAPI.GetUserData(new GetUserDataRequest()
-            {
-                Keys = null,
-                PlayFabId = Photon.Pun.PhotonNetwork.LocalPlayer.UserId
-            }, msg =>
-            {
-                foreach (KeyValuePair<string, UserDataRecord> kv in msg.Data)
-                {
-                    string str = kv.Value.Value;
-
-                    Debug.Log($"{kv.Key} : {str}");
-
-                    saveData[kv.Key] = str;
-                }
-            }, error =>
-            {
-                Debug.LogError("Failed to get user data");
-            });
+            if (float.TryParse(saveData[key], out float result))
+                return result;
         }
 
-        public static void DeleteAll()
+        return 0;
+    }
+
+    public static int GetInt(string key, int defaultValue)
+    {
+        if (saveData.ContainsKey(key))
         {
-            Debug.LogError("You can't delete all user data for obvious reasons");
+            if (int.TryParse(saveData[key], out int result))
+                return result;
         }
 
-        public static void DeleteKey(string key)
+        return defaultValue;
+    }
+
+    public static int GetInt(string key)
+    {
+        if (saveData.ContainsKey(key))
         {
-            Debug.Log("Deleting key");
+            if (int.TryParse(saveData[key], out int result))
+                return result;
+        }
+
+        return 0;
+    }
+
+    public static string GetString(string key, string defaultValue)
+    {
+        if (saveData.ContainsKey(key))
+            return saveData[key];
+
+        return defaultValue;
+    }
+
+    public static string GetString(string key)
+    {
+        if (saveData.ContainsKey(key))
+            return saveData[key];
+
+        return "";
+    }
+
+    public static bool HasKey(string key)
+    {
+        return saveData.ContainsKey(key);
+    }
+
+    public static void Save()
+    {
+        Debug.Log("Saving data");
+
+        PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
+        {
+            Data = saveData,
+            Permission = UserDataPermission.Public
+        }, msg => { Debug.Log("Saved data"); }, error => { Debug.LogError("Failed to upload data"); });
+    }
+
+    public static void SetFloat(string key, float value)
+    {
+        if (!CheckOverlap(key, value.ToString()))
+        {
+            saveData[key] = value.ToString();
+
+            Debug.Log("Setting float");
 
             PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
-                KeysToRemove = new List<string>() { key },
+                Data = new Dictionary<string, string>()
+                    {
+                        { key, value.ToString() }
+                    },
                 Permission = UserDataPermission.Public
-            }, msg => { Debug.Log("Deleted key"); }, error => { Debug.LogError("Failed to upload pdata"); });
+            }, msg => { Debug.Log("Saved float"); }, error => { Debug.LogError("Failed to upload data"); });
         }
-
-        public static float GetFloat(string key, float defaultValue)
+        else
         {
-            if (saveData.ContainsKey(key))
-            {
-                if (float.TryParse(saveData[key], out float result))
-                    return result;
-            }
-
-            return defaultValue;
+            Debug.Log("No reason to upload as data is the same");
         }
+    }
 
-        public static float GetFloat(string key)
+    public static void SetInt(string key, int value)
+    {
+        if (!CheckOverlap(key, value.ToString()))
         {
-            if (saveData.ContainsKey(key))
-            {
-                if (float.TryParse(saveData[key], out float result))
-                    return result;
-            }
+            saveData[key] = value.ToString();
 
-            return 0;
-        }
-
-        public static int GetInt(string key, int defaultValue)
-        {
-            if (saveData.ContainsKey(key))
-            {
-                if (int.TryParse(saveData[key], out int result))
-                    return result;
-            }
-
-            return defaultValue;
-        }
-
-        public static int GetInt(string key)
-        {
-            if (saveData.ContainsKey(key))
-            {
-                if (int.TryParse(saveData[key], out int result))
-                    return result;
-            }
-
-            return 0;
-        }
-
-        public static string GetString(string key, string defaultValue)
-        {
-            if (saveData.ContainsKey(key))
-                return saveData[key];
-
-            return defaultValue;
-        }
-
-        public static string GetString(string key)
-        {
-            if (saveData.ContainsKey(key))
-                return saveData[key];
-
-            return "";
-        }
-
-        public static bool HasKey(string key)
-        {
-            return saveData.ContainsKey(key);
-        }
-
-        public static void Save()
-        {
-            Debug.Log("Saving data");
+            Debug.Log("Setting int");
 
             PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
-                Data = saveData,
+                Data = new Dictionary<string, string>()
+                    {
+                        { key, value.ToString() }
+                    },
                 Permission = UserDataPermission.Public
-            }, msg => { Debug.Log("Saved data"); }, error => { Debug.LogError("Failed to upload data"); });
+            }, msg => { Debug.Log("Saved int"); }, error => { Debug.LogError("Failed to upload data"); });
         }
-
-        public static void SetFloat(string key, float value)
+        else
         {
-            if (!CheckOverlap(key, value.ToString()))
-            {
-                saveData[key] = value.ToString();
-
-                Debug.Log("Setting float");
-
-                PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
-                {
-                    Data = new Dictionary<string, string>()
-                    {
-                        { key, value.ToString() }
-                    },
-                    Permission = UserDataPermission.Public
-                }, msg => { Debug.Log("Saved float"); }, error => { Debug.LogError("Failed to upload data"); });
-            }
-            else
-            {
-                Debug.Log("No reason to upload as data is the same");
-            }
+            Debug.Log("No reason to upload as data is the same");
         }
+    }
 
-        public static void SetInt(string key, int value)
+    public static void SetString(string key, string value)
+    {
+        if (!CheckOverlap(key, value))
         {
-            if (!CheckOverlap(key, value.ToString()))
+            saveData[key] = value;
+
+            Debug.Log("Setting string");
+
+            PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
-                saveData[key] = value.ToString();
-
-                Debug.Log("Setting int");
-
-                PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
-                {
-                    Data = new Dictionary<string, string>()
-                    {
-                        { key, value.ToString() }
-                    },
-                    Permission = UserDataPermission.Public
-                }, msg => { Debug.Log("Saved int"); }, error => { Debug.LogError("Failed to upload data"); });
-            }
-            else
-            {
-                Debug.Log("No reason to upload as data is the same");
-            }
-        }
-
-        public static void SetString(string key, string value)
-        {
-            if (!CheckOverlap(key, value))
-            {
-                saveData[key] = value;
-
-                Debug.Log("Setting string");
-
-                PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
-                {
-                    Data = new Dictionary<string, string>()
+                Data = new Dictionary<string, string>()
                     {
                         { key, value }
                     },
-                    Permission = UserDataPermission.Public
-                }, msg => { Debug.Log("Saved string"); }, error => { Debug.LogError("Failed to upload data"); });
-            }
-            else
-            {
-                Debug.Log("No reason to upload as data is the same");
-            }
+                Permission = UserDataPermission.Public
+            }, msg => { Debug.Log("Saved string"); }, error => { Debug.LogError("Failed to upload data"); });
         }
-
-        private static void Save(string key)
+        else
         {
-            if (HasKey(key))
-            {
-                Debug.Log("Saving key");
+            Debug.Log("No reason to upload as data is the same");
+        }
+    }
 
-                PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
-                {
-                    Data = new Dictionary<string, string>()
+    private static void Save(string key)
+    {
+        if (HasKey(key))
+        {
+            Debug.Log("Saving key");
+
+            PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
+            {
+                Data = new Dictionary<string, string>()
                     {
                         { key, saveData[key] }
                     },
-                    Permission = UserDataPermission.Public
-                }, msg => { Debug.Log("Saved key"); }, error => { Debug.LogError("Failed to upload data"); });
-            }
+                Permission = UserDataPermission.Public
+            }, msg => { Debug.Log("Saved key"); }, error => { Debug.LogError("Failed to upload data"); });
         }
     }
 }
