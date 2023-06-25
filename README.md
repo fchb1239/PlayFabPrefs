@@ -10,3 +10,11 @@ PlayFabPrefs:
 ![image](https://github.com/fchb1239/PlayFabPrefs/assets/29258204/478e4190-437a-4cc6-851c-399ecc80a1fe)
 
 ![image](https://github.com/fchb1239/PlayFabPrefs/assets/29258204/dd0b1098-f79b-4ecd-aced-30b2f0a4c3a2)
+
+# Documentation
+Initialising:
+```cs
+PlayFabPrefs.Get();
+```
+
+And the rest is just the same as the [PlayerPrefs](https://docs.unity3d.com/ScriptReference/PlayerPrefs.html) syntax
