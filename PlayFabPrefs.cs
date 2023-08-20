@@ -115,6 +115,27 @@ public class PlayFabPrefs
         return defaultValue;
     }
 
+    public static int GetBool(string key, bool defaultVal)
+    {
+        int defaultValue = 0;
+        if (defaultVal == true){
+            defaultValue = 1;
+        }
+        if (saveData.ContainsKey(key))
+        {
+            if (int.TryParse(saveData[key], out int result))
+            if (result == 1){
+                return true;
+            }
+            else if (result == 0){
+                return false;
+            }
+                return false;;
+        }
+
+        return defaultValue;
+    }
+
     public static int GetInt(string key)
     {
         if (saveData.ContainsKey(key))
@@ -183,6 +204,33 @@ public class PlayFabPrefs
 
     public static void SetInt(string key, int value)
     {
+        if (!CheckOverlap(key, value.ToString()))
+        {
+            saveData[key] = value.ToString();
+
+            Debug.Log("Setting int");
+
+            PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
+            {
+                Data = new Dictionary<string, string>()
+                    {
+                        { key, value.ToString() }
+                    },
+                Permission = UserDataPermission.Public
+            }, msg => { Debug.Log("Saved int"); }, error => { Debug.LogError("Failed to upload data"); });
+        }
+        else
+        {
+            Debug.Log("No reason to upload as data is the same");
+        }
+    }
+
+    public static void SetBool(string key, bool val)
+    {
+        int value = 0;
+        if (val == true){
+            value = 1;
+        }
         if (!CheckOverlap(key, value.ToString()))
         {
             saveData[key] = value.ToString();
