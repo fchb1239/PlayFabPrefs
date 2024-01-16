@@ -32,6 +32,7 @@ SOFTWARE.
 
 public class PlayFabPrefs
 {
+    public static bool ready = false;
     private static Dictionary<string, string> saveData = new Dictionary<string, string>();
 
     public static bool CheckOverlap(string key, string value)
@@ -42,28 +43,32 @@ public class PlayFabPrefs
             return false;
     }
 
-    public static void Get()
+    public static async Task Get()
     {
         Debug.Log("Getting saved data");
 
-        PlayFabClientAPI.GetUserData(new GetUserDataRequest()
+        var result = await PlayFabAsyncClientAPI.GetUserDataAsync(new GetUserDataRequest
         {
             Keys = null,
-            PlayFabId = Photon.Pun.PhotonNetwork.LocalPlayer.UserId
-        }, msg =>
-        {
-            foreach (KeyValuePair<string, UserDataRecord> kv in msg.Data)
-            {
-                string str = kv.Value.Value;
+            PlayFabId = LoginManager.playFabId
+        });
 
-                Debug.Log($"{kv.Key} : {str}");
-
-                saveData[kv.Key] = str;
-            }
-        }, error =>
+        if (result.IsError)
         {
             Debug.LogError("Failed to get user data");
-        });
+            return;
+        }
+
+        foreach (KeyValuePair<string, UserDataRecord> kv in result.Result.Data)
+        {
+            string str = kv.Value.Value;
+
+            //Debug.Log($"{kv.Key} : {str}");
+
+            saveData[kv.Key] = str;
+        }
+
+        ready = true;
     }
 
     public static void DeleteAll()
@@ -80,10 +85,15 @@ public class PlayFabPrefs
             KeysToRemove = new List<string>() { key },
             Permission = UserDataPermission.Public
         }, msg => { Debug.Log("Deleted key"); }, error => { Debug.LogError("Failed to upload pdata"); });
+
+        PlayerPrefs.DeleteKey(key);
     }
 
     public static float GetFloat(string key, float defaultValue)
     {
+        if (!ready)
+            return PlayerPrefs.GetFloat(key, defaultValue);
+
         if (saveData.ContainsKey(key))
         {
             if (float.TryParse(saveData[key], out float result))
@@ -95,6 +105,9 @@ public class PlayFabPrefs
 
     public static float GetFloat(string key)
     {
+        if (!ready)
+            return PlayerPrefs.GetFloat(key);
+
         if (saveData.ContainsKey(key))
         {
             if (float.TryParse(saveData[key], out float result))
@@ -106,6 +119,9 @@ public class PlayFabPrefs
 
     public static int GetInt(string key, int defaultValue)
     {
+        if (!ready)
+            return PlayerPrefs.GetInt(key, defaultValue);
+
         if (saveData.ContainsKey(key))
         {
             if (int.TryParse(saveData[key], out int result))
@@ -117,6 +133,9 @@ public class PlayFabPrefs
 
     public static int GetInt(string key)
     {
+        if (!ready)
+            return PlayerPrefs.GetInt(key);
+
         if (saveData.ContainsKey(key))
         {
             if (int.TryParse(saveData[key], out int result))
@@ -128,6 +147,9 @@ public class PlayFabPrefs
 
     public static string GetString(string key, string defaultValue)
     {
+        if (!ready)
+            return PlayerPrefs.GetString(key, defaultValue);
+
         if (saveData.ContainsKey(key))
             return saveData[key];
 
@@ -136,6 +158,9 @@ public class PlayFabPrefs
 
     public static string GetString(string key)
     {
+        if (!ready)
+            return PlayerPrefs.GetString(key);
+
         if (saveData.ContainsKey(key))
             return saveData[key];
 
@@ -144,6 +169,9 @@ public class PlayFabPrefs
 
     public static bool HasKey(string key)
     {
+        if (!ready)
+            return PlayerPrefs.HasKey(key);
+
         return saveData.ContainsKey(key);
     }
 
@@ -156,6 +184,8 @@ public class PlayFabPrefs
             Data = saveData,
             Permission = UserDataPermission.Public
         }, msg => { Debug.Log("Saved data"); }, error => { Debug.LogError("Failed to upload data"); });
+
+        PlayerPrefs.Save();
     }
 
     public static void SetFloat(string key, float value)
@@ -169,11 +199,13 @@ public class PlayFabPrefs
             PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
                 Data = new Dictionary<string, string>()
-                    {
-                        { key, value.ToString() }
-                    },
+                {
+                    { key, value.ToString() }
+                },
                 Permission = UserDataPermission.Public
             }, msg => { Debug.Log("Saved float"); }, error => { Debug.LogError("Failed to upload data"); });
+
+            UnityEngine.PlayerPrefs.SetFloat(key, value);
         }
         else
         {
@@ -192,11 +224,13 @@ public class PlayFabPrefs
             PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
                 Data = new Dictionary<string, string>()
-                    {
-                        { key, value.ToString() }
-                    },
+                {
+                    { key, value.ToString() }
+                },
                 Permission = UserDataPermission.Public
             }, msg => { Debug.Log("Saved int"); }, error => { Debug.LogError("Failed to upload data"); });
+
+            UnityEngine.PlayerPrefs.SetInt(key, value);
         }
         else
         {
@@ -215,11 +249,13 @@ public class PlayFabPrefs
             PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
                 Data = new Dictionary<string, string>()
-                    {
-                        { key, value }
-                    },
+                {
+                    { key, value }
+                },
                 Permission = UserDataPermission.Public
             }, msg => { Debug.Log("Saved string"); }, error => { Debug.LogError("Failed to upload data"); });
+
+            UnityEngine.PlayerPrefs.SetString(key, value);
         }
         else
         {
@@ -236,11 +272,13 @@ public class PlayFabPrefs
             PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest()
             {
                 Data = new Dictionary<string, string>()
-                    {
-                        { key, saveData[key] }
-                    },
+                {
+                    { key, saveData[key] }
+                },
                 Permission = UserDataPermission.Public
             }, msg => { Debug.Log("Saved key"); }, error => { Debug.LogError("Failed to upload data"); });
+
+            UnityEngine.PlayerPrefs.Save();
         }
     }
 }
